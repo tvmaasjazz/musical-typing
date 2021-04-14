@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/musical-typing/static/css/main.efa141d1.chunk.css",
+    "main.js": "/musical-typing/static/js/main.4727a0de.chunk.js",
+    "main.js.map": "/musical-typing/static/js/main.4727a0de.chunk.js.map",
+    "runtime-main.js": "/musical-typing/static/js/runtime-main.fec3110e.js",
+    "runtime-main.js.map": "/musical-typing/static/js/runtime-main.fec3110e.js.map",
+    "static/js/2.3d31ff16.chunk.js": "/musical-typing/static/js/2.3d31ff16.chunk.js",
+    "static/js/2.3d31ff16.chunk.js.map": "/musical-typing/static/js/2.3d31ff16.chunk.js.map",
+    "static/js/3.5acf65f5.chunk.js": "/musical-typing/static/js/3.5acf65f5.chunk.js",
+    "static/js/3.5acf65f5.chunk.js.map": "/musical-typing/static/js/3.5acf65f5.chunk.js.map",
+    "index.html": "/musical-typing/index.html",
+    "static/css/main.efa141d1.chunk.css.map": "/musical-typing/static/css/main.efa141d1.chunk.css.map",
+    "static/js/2.3d31ff16.chunk.js.LICENSE.txt": "/musical-typing/static/js/2.3d31ff16.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.fec3110e.js",
+    "static/js/2.3d31ff16.chunk.js",
+    "static/css/main.efa141d1.chunk.css",
+    "static/js/main.4727a0de.chunk.js"
+  ]
+}
