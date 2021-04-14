@@ -1,0 +1,8 @@
+.map-form {
+    border: 1px solid black;
+}
+
+.map-form__reset {
+    color: red;
+    margin-top: 20px;
+}

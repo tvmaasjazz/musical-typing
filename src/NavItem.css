@@ -1,0 +1,11 @@
+.nav__item {
+    width: 30%;
+    height: 100%;
+    color: white;
+    background-color: lightgray;
+}
+
+.nav__item--active {
+    background-color: green;
+}
+
