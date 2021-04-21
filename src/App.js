@@ -18,6 +18,8 @@ class App extends Component {
         // make so can map to special keys like ENTER
         // change so user can have multiple maps
 
+        // add in sample loader class with tone js installed
+
         this.state = {
             mode: localStorage.getItem('mode') || 'MAP',
             // mode: 'MAP',
@@ -66,7 +68,7 @@ class App extends Component {
                     channel
                 }
             }
-        }), () => [localStorage.setItem('charToNote', JSON.stringify(this.state.charToNote)), console.log(this.state.charToNote)]);
+        }), () => localStorage.setItem('charToNote', JSON.stringify(this.state.charToNote)));
     }
 
     resetMapping() {
