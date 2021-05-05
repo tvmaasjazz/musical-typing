@@ -11,7 +11,8 @@ class MapForm extends Component {
             octave: '3',
             duration: 2000,
             velocity: 100,
-            channel: 1
+            // TODO: handle situation here and below where no instruments passed (or it's just empty array?)
+            instrument: this.props.instruments[0]
         };
 
         this.handleInputChanges = this.handleInputChanges.bind(this);
@@ -42,11 +43,11 @@ class MapForm extends Component {
         // but can add that later with duration as well
 
         for (const char of this.state.chars) {
-            this.props.updateCharToNote(char, {
+            this.props.updateCharMapping(char, {
                 note: this.state.note + this.state.octave,
                 duration: Number(this.state.duration),
                 velocity: Number(this.state.velocity) / 127.0,
-                channel: Number(this.state.channel)
+                instrument: this.state.instrument
             });
         }
     }
@@ -55,6 +56,12 @@ class MapForm extends Component {
         return (
             <div className="map-form-container">
                 <form className="map-form" onSubmit={this.handleSubmit}>
+                    <div className="map-form__instrument">
+                        <label htmlFor="instrument">Instrument: </label>
+                        <select name="instrument" value={this.state.instrument} onChange={this.handleInputChanges}>
+                            {this.props.instruments.map((instrument, index) => (<option value={instrument} key={index} >{instrument}</option>))}
+                        </select>
+                    </div>
                     <div className="map-form__chars">
                         <label htmlFor="chars">Char(s): </label>
                         <input name="chars" type="text" onChange={this.handleInputChanges} />
@@ -91,12 +98,6 @@ class MapForm extends Component {
                         <label htmlFor="velocity">Velocity: </label>
                         <select name="velocity" value={this.state.velocity} onChange={this.handleInputChanges}>
                             {Array(128).fill().map((_, index) => (<option value={index} key={index} >{index}</option>))}
-                        </select>
-                    </div>
-                    <div className="map-form__channel">
-                        <label htmlFor="channel">Channel: </label>
-                        <select name="channel" value={this.state.channel} onChange={this.handleInputChanges}>
-                            {Array(16).fill().map((_, index) => (<option value={index + 1} key={index + 1} >{index + 1}</option>))}
                         </select>
                     </div>
                     <input type="submit" value="Submit" />

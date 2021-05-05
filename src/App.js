@@ -1,107 +1,143 @@
 import React, { Component } from 'react';
-import WebMidi from 'webmidi';
+import * as Tone from 'tone';
+import InstrumentLibrary from './instrument-library/InstrumentLibrary';
 import './App.css';
 import MapForm from './MapForm';
 import Play from './Play';
 import Nav from './Nav';
 import NoteMapping from './NoteMapping';
+import EnableSound from './EnableSound';
+import LoadingIndicator from './LoadingIndicator';
 
 class App extends Component {
     constructor(props) {
         super(props);
 
         // TODO:
-        // do cleanup stuff... move webmidi to on mount, and then tear down make sure all midi notes have been sent off command
-        // deploy
-        // change it to prompt user to select midi output device
+        // look at ways to have length of sound in Tone.js
+        // update the form and char mapping situation to play the sampler notes
+        // -- DEPLOY THIS VERSION TELL YVETTE --
+        // try figuring out s3 permissions... probably just wait until next phase
+        // add component for selecting instruments to load when you get to the page
+        // have instruments that were loaded saved in local storage so they load on arriving
+        // change form to select instrument first (then only give options based off that)
+        // once get it where it was but with loaded instruments, stop
         // make so can enter multiple notes for a char
         // make so can map to special keys like ENTER
         // change so user can have multiple maps
 
-        // add in sample loader class with tone js installed
+        // maybe set something in local storage and check for that to clear info or not?
+        if (!localStorage.getItem('version') || localStorage.getItem('version') !== '.2') {
+            localStorage.clear();
+        }
+        localStorage.setItem('version', '.2');
 
+        this.instrumentLibrary = new InstrumentLibrary();
         this.state = {
+            isSoundEnabled: false,
+            isLoading: false,
             mode: localStorage.getItem('mode') || 'MAP',
-            // mode: 'MAP',
-            charToNote: localStorage.getItem('charToNote') ? JSON.parse(localStorage.getItem('charToNote')) : {},
-            midiOutput: null
+            charMapping: localStorage.getItem('charMapping') ? JSON.parse(localStorage.getItem('charMapping')) : {},
+            loadedInstruments: localStorage.getItem('loadedInstruments') ? JSON.parse(localStorage.getItem('loadedInstruments')) : Object.keys(this.instrumentLibrary.instruments)
         };
 
         this.setMode = this.setMode.bind(this);
-        this.updateCharToNote = this.updateCharToNote.bind(this);
+        this.updateCharMapping = this.updateCharMapping.bind(this);
         this.resetMapping = this.resetMapping.bind(this);
+        this.enableSound = this.enableSound.bind(this);
     }
 
-    componentDidMount() {
-        // enable midi
-        WebMidi.enable((error) => {
-            if (error) {
-                console.log('WEB MIDI ERROR: ', error);
-                return;
-            }
+    async componentDidMount() {
+        // load instruments if any were in local storage
+        if (Array.isArray(this.state.loadedInstruments) && this.state.loadedInstruments.length > 0) {
+            await this.loadInstruments(this.state.loadedInstruments);
+        }
+        else {
+            // TODO: prompt user to select instruments to load
+        }
+    }
 
-            console.log('--OUTPUTS--');
-            console.log(WebMidi.outputs);
+    async loadInstruments(instruments) {
+        this.setState({ isLoading: true });
+        try {
+            await this.instrumentLibrary.load(instruments);
+            // update the state with the new loaded instruments
+            this.updateLoadedInstruments();
+            this.setState({ isLoading: false });
+        }
+        catch (error) {
+            alert('There was an error loading the instruments');
+            console.log('error loading instruments: ', error);
+            this.setState({ isLoading: false });
+        }
+    }
 
-            // TODO: prompt user to select midi output to use
-            this.setState({ midiOutput: WebMidi.outputs[0] });
-        });
+    updateLoadedInstruments() {
+        const loadedInstruments = this.instrumentLibrary.getLoadedInstruments().map(instrument => instrument.name);
+        this.setState({ loadedInstruments }, () => localStorage.setItem('loadedInstruments', JSON.stringify(loadedInstruments)));
+    }
+
+    enableSound() {
+        // do tone stuff
+        Tone.Transport.start();
+
+        this.setState({ isSoundEnabled: true });
     }
 
     setMode(mode) {
         this.setState({ mode }, () => localStorage.setItem('mode', this.state.mode));
     }
 
-    updateCharToNote(char, {
+    updateCharMapping(char, {
         note,
         duration,
         velocity,
-        channel
+        instrument
     }) {
         this.setState(pst => ({
-            charToNote: {
-                ...pst.charToNote,
+            // TODO: mapping should have properties at top level for instruments and other settings, then the 
+            // mapping itself at a lower level
+            charMapping: {
+                ...pst.charMapping,
                 [char]: {
                     notes: [note],
                     duration,
                     velocity,
-                    channel
+                    instrument
                 }
             }
-        }), () => localStorage.setItem('charToNote', JSON.stringify(this.state.charToNote)));
+        }), () => localStorage.setItem('charMapping', JSON.stringify(this.state.charMapping)));
     }
 
     resetMapping() {
-        this.setState({ charToNote: {} }, () => localStorage.setItem('charToNote', '{}'));
+        this.setState({ charMapping: {} }, () => localStorage.setItem('charMapping', '{}'));
     }
 
     render() {
-        // map mode and instrument mode
-        // so there should be a global map of string to midi number
-        // you click map and you can see the current mappings below
-        // amnd at the top there is a form where you type the char
-        // hit tab, and then put int the number 0 - 127
-        //c when suibm,itted it updates that value which
-        // should rerender the display below
-        
-        // then you can go back to instrument mode and on that page
-        // listen for keyboard events and then send midi info based on
-        // the mapping
-        // instrument mode will also display what you are typing below 
-
-        // return nav bar whioch gets passed func to change the mode
-
         return (
             <div className='app'>
+                {
+                    this.state.isLoading ? <LoadingIndicator /> : null
+                }
+                {
+                    this.state.isSoundEnabled ? null : <EnableSound enableSound={this.enableSound} />
+                }
                 <Nav
                     mode={this.state.mode}
                     setMode={this.setMode}
                 />
-                <NoteMapping charToNote={this.state.charToNote} />
+                <NoteMapping charMapping={this.state.charMapping} />
                 {
                     this.state.mode === 'MAP' ?
-                        <MapForm updateCharToNote={this.updateCharToNote} resetMapping={this.resetMapping} /> :
-                        <Play charToNote={this.state.charToNote} midiOutput={this.state.midiOutput} />
+                        <MapForm 
+                            updateCharMapping={this.updateCharMapping}
+                            resetMapping={this.resetMapping}
+                            instruments={this.state.loadedInstruments}
+                        /> :
+                        <Play
+                            charMapping={this.state.charMapping}
+                            instrumentLibrary={this.instrumentLibrary}    
+                        />
                 }
             </div>
         );
