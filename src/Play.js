@@ -4,6 +4,8 @@ class Play extends Component {
     constructor(props) {
         super(props);
 
+        this.instrumentLibrary = props.instrumentLibrary;
+
         this.onKeyPress = this.onKeyPress.bind(this);
     }
 
@@ -13,12 +15,10 @@ class Play extends Component {
         const char = String.fromCharCode(charCode);
         
         // if the char has a mapping set
-        if (this.props.charToNote[char]) {
-            const charMap = this.props.charToNote[char];
-            this.props.midiOutput.playNote(charMap.notes, charMap.channel, {
-                duration: charMap.duration,
-                velocity: charMap.velocity
-            });
+        if (this.props.charMapping[char]) {
+            const charMap = this.props.charMapping[char];
+           this.instrumentLibrary.getInstrument(charMap.instrument).sampler
+                .triggerAttackRelease(charMap.notes, charMap.duration / 1000.0, undefined, charMap.velocity);
         }
     }
 

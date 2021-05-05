@@ -3,10 +3,10 @@ import './NoteMapping.css';
 import NoteMappingItem from './NoteMappingItem';
 
 const NoteMapping = ({
-    charToNote
+    charMapping
 }) => {
-    // set charToNote to sorted array
-    const charToNoteArray = Object.entries(charToNote).map(entry => {
+    // set charMapping to sorted array
+    const charMappingArray = Object.entries(charMapping).map(entry => {
         return {
             char: entry[0],
             values: entry[1]
@@ -18,11 +18,11 @@ const NoteMapping = ({
     return (
         <div className='note-mapping'>
             {
-                charToNoteArray.map(charToNoteItem => (
+                charMappingArray.map(charMappingItem => (
                     <NoteMappingItem
-                        key={charToNoteItem.char}
-                        note={charToNoteItem.values.notes[0]}
-                        char={charToNoteItem.char}
+                        key={charMappingItem.char}
+                        note={charMappingItem.values.notes[0]}
+                        char={charMappingItem.char}
                     />
                 ))
             }
