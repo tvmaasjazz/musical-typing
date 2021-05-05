@@ -1,7 +1,7 @@
 {
   "homepage": "https://tvmaasjazz.github.io/musical-typing",
   "name": "musical-typing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
