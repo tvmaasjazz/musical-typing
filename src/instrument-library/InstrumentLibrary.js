@@ -4,7 +4,7 @@ import startingInstruments from './startingInstruments';
 class InstrumentLibrary {
     constructor() {
         // this.baseUrl = 'https://instrument-samples.s3.amazonaws.com';
-        this.baseUrl = './instruments';
+        this.baseUrl = `${process.env.PUBLIC_URL}/instruments`;
         // available instruments to be loaded
         this.instruments = startingInstruments;
     }
@@ -18,7 +18,7 @@ class InstrumentLibrary {
                 continue;
             }
 
-            promises.push(new Promise(res => {
+            promises.push(new Promise((res, rej) => {
                 const toneSampler = new Tone.Sampler({
                     baseUrl: `${this.baseUrl}/${instrument.name}/`,
                     urls: instrument.noteToFile,
@@ -28,10 +28,10 @@ class InstrumentLibrary {
                         res();
                     },
                     onerror: (err) => {
-                        console.log(err);
+                        rej(err);
                     }
                 });
-                // TODO: does ths work here or have to be after load?
+
                 toneSampler.toDestination();
             }));
         }

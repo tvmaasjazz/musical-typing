@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import * as Tone from 'tone';
+import * as uuid from 'uuid';
 import InstrumentLibrary from './instrument-library/InstrumentLibrary';
 import './App.css';
-import MapForm from './MapForm';
+import Map from './Map';
 import Play from './Play';
 import Nav from './Nav';
 import NoteMapping from './NoteMapping';
@@ -14,8 +15,6 @@ class App extends Component {
         super(props);
 
         // TODO:
-        // look at ways to have length of sound in Tone.js
-        // update the form and char mapping situation to play the sampler notes
         // -- DEPLOY THIS VERSION TELL YVETTE --
         // try figuring out s3 permissions... probably just wait until next phase
         // add component for selecting instruments to load when you get to the page
@@ -26,31 +25,59 @@ class App extends Component {
         // make so can map to special keys like ENTER
         // change so user can have multiple maps
 
+        // const exampleCharMap = {
+        //     identity: 'ty73738he',
+        //     name: 'My First Mapping',
+        //     instruments: ['piano', 'cello'],
+        //     mapping: {
+
+        //     }
+        // };
+
         // maybe set something in local storage and check for that to clear info or not?
-        if (!localStorage.getItem('version') || localStorage.getItem('version') !== '.2') {
-            localStorage.clear();
+        // TODO: make a version nchanghe and havee it look for 'charMapping' and then save that
+        // as activeCharMap and in the charMaps object in local storage
+        if (!localStorage.getItem('version') || localStorage.getItem('version') !== '.3') {
+            const identity = uuid.v4();
+            localStorage.setItem('activeCharMapIdentity', identity);
+            const firstCharMaps = {
+                [identity]: {
+                    identity,
+                    name: 'First Mapping',
+                    instruments: ['piano', 'cello'],
+                    mapping: localStorage.getItem('charMapping') ? JSON.parse(localStorage.getItem('charMapping')) : {}
+                }
+            };
+            localStorage.setItem('charMaps', JSON.stringify(firstCharMaps));
+
+            localStorage.removeItem('charMapping');
+            localStorage.removeItem('loadedInstruments');
         }
-        localStorage.setItem('version', '.2');
+        localStorage.setItem('version', '.3');
 
         this.instrumentLibrary = new InstrumentLibrary();
         this.state = {
             isSoundEnabled: false,
             isLoading: false,
             mode: localStorage.getItem('mode') || 'MAP',
-            charMapping: localStorage.getItem('charMapping') ? JSON.parse(localStorage.getItem('charMapping')) : {},
-            loadedInstruments: localStorage.getItem('loadedInstruments') ? JSON.parse(localStorage.getItem('loadedInstruments')) : Object.keys(this.instrumentLibrary.instruments)
+            activeCharMapIdentity: localStorage.getItem('activeCharMapIdentity'),
+            charMaps: localStorage.getItem('charMaps') ? JSON.parse(localStorage.getItem('charMaps')) : {}
         };
 
         this.setMode = this.setMode.bind(this);
         this.updateCharMapping = this.updateCharMapping.bind(this);
         this.resetMapping = this.resetMapping.bind(this);
         this.enableSound = this.enableSound.bind(this);
+        this.createMapping = this.createMapping.bind(this);
+        this.useMapping = this.useMapping.bind(this);
     }
 
     async componentDidMount() {
+        // TODO: check for instruments on the active char map and load those
         // load instruments if any were in local storage
-        if (Array.isArray(this.state.loadedInstruments) && this.state.loadedInstruments.length > 0) {
-            await this.loadInstruments(this.state.loadedInstruments);
+        const { charMaps, activeCharMapIdentity } = this.state;
+        if (charMaps && charMaps[activeCharMapIdentity] && charMaps[activeCharMapIdentity].instruments) {
+            await this.loadInstruments(charMaps[activeCharMapIdentity].instruments);
         }
         else {
             // TODO: prompt user to select instruments to load
@@ -61,8 +88,6 @@ class App extends Component {
         this.setState({ isLoading: true });
         try {
             await this.instrumentLibrary.load(instruments);
-            // update the state with the new loaded instruments
-            this.updateLoadedInstruments();
             this.setState({ isLoading: false });
         }
         catch (error) {
@@ -72,15 +97,8 @@ class App extends Component {
         }
     }
 
-    updateLoadedInstruments() {
-        const loadedInstruments = this.instrumentLibrary.getLoadedInstruments().map(instrument => instrument.name);
-        this.setState({ loadedInstruments }, () => localStorage.setItem('loadedInstruments', JSON.stringify(loadedInstruments)));
-    }
-
     enableSound() {
-        // do tone stuff
         Tone.Transport.start();
-
         this.setState({ isSoundEnabled: true });
     }
 
@@ -95,22 +113,61 @@ class App extends Component {
         instrument
     }) {
         this.setState(pst => ({
-            // TODO: mapping should have properties at top level for instruments and other settings, then the 
-            // mapping itself at a lower level
-            charMapping: {
-                ...pst.charMapping,
-                [char]: {
-                    notes: [note],
-                    duration,
-                    velocity,
-                    instrument
+            charMaps: {
+                ...pst.charMaps,
+                [pst.activeCharMapIdentity]: {
+                    ...pst.charMaps[pst.activeCharMapIdentity],
+                    mapping: {
+                        ...pst.charMaps[pst.activeCharMapIdentity].mapping,
+                        [char]: {
+                            notes: [note],
+                            duration,
+                            velocity,
+                            instrument
+                        }
+                    }
                 }
             }
-        }), () => localStorage.setItem('charMapping', JSON.stringify(this.state.charMapping)));
+        }), () => localStorage.setItem('charMaps', JSON.stringify(this.state.charMaps)));
+    }
+
+    createMapping(name) {
+        const identity = uuid.v4();
+        const newMapping = {
+            identity,
+            name,
+            instruments: ['piano', 'cello'],
+            mapping: {}
+        };
+
+        // update the state and the local storage
+        this.setState(pst => ({
+            activeCharMapIdentity: identity,
+            charMaps: {
+                ...pst.charMaps,
+                [identity]: newMapping
+            }
+        }), () => {
+            localStorage.setItem('charMaps', JSON.stringify(this.state.charMaps));
+            localStorage.setItem('activeCharMapIdentity', this.state.activeCharMapIdentity);
+        });
+    }
+
+    useMapping(identity) {
+        this.setState({ activeCharMapIdentity: identity }, () => localStorage.setItem('activeCharMapIdentity', this.state.activeCharMapIdentity));
     }
 
     resetMapping() {
-        this.setState({ charMapping: {} }, () => localStorage.setItem('charMapping', '{}'));
+        this.setState(pst => ({
+            charMaps: {
+                ...pst.charMaps,
+                [pst.activeCharMapIdentity]: {
+                    ...pst.charMaps[pst.activeCharMapIdentity],
+                    // TODO: in future reset instruments and/or other attributes
+                    mapping: {}
+                }
+            }
+        }), () => localStorage.setItem('charMaps', JSON.stringify(this.state.charMaps)));
     }
 
     render() {
@@ -126,16 +183,21 @@ class App extends Component {
                     mode={this.state.mode}
                     setMode={this.setMode}
                 />
-                <NoteMapping charMapping={this.state.charMapping} />
+                <NoteMapping charMap={this.state.charMaps[this.state.activeCharMapIdentity]} />
                 {
                     this.state.mode === 'MAP' ?
-                        <MapForm 
+                    // TODO: make a higher level Map component, then inside that have the MapForm
+                    // and the section to either start new map or change active map with list of avaialeable
+                        <Map
                             updateCharMapping={this.updateCharMapping}
                             resetMapping={this.resetMapping}
-                            instruments={this.state.loadedInstruments}
+                            charMaps={this.state.charMaps}
+                            activeCharMapIdentity={this.state.activeCharMapIdentity}
+                            createMapping={this.createMapping}
+                            useMapping={this.useMapping}
                         /> :
                         <Play
-                            charMapping={this.state.charMapping}
+                            charMapping={this.state.charMaps[this.state.activeCharMapIdentity].mapping}
                             instrumentLibrary={this.instrumentLibrary}    
                         />
                 }
