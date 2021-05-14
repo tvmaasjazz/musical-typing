@@ -103,7 +103,7 @@ class MapForm extends Component {
                     <input type="submit" value="Submit" />
                 </form>
 
-                <button className="map-form__reset" onClick={this.props.resetMapping} >Reset Mapping</button>
+                <button className="map-form__reset" onClick={this.props.resetMapping} >Reset Current Mapping</button>
             </div>
         );
     }
